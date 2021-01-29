@@ -1,0 +1,120 @@
+version: "3.3"
+
+services:
+
+    agency: 
+        image: arangodb/arangodb
+        environment:
+            - ARANGO_NO_AUTH=1
+        command: arangod 
+          --server.endpoint tcp://0.0.0.0:8529 
+          --agency.my-address tcp://agency:8529 
+          --server.authentication false 
+          --agency.size 3 
+          --agency.activate true   
+          --agency.supervision true
+          --database.directory /var/lib/arangodb3
+        deploy:
+          replicas: 1
+          placement:
+            constraints:
+              - node.hostname == server.roshops.com
+          restart_policy:
+            condition: on-failure
+            max_attempts: 3
+
+    agency2: 
+        image: arangodb/arangodb
+        environment:
+            - ARANGO_NO_AUTH=1
+        command: arangod 
+          --server.endpoint tcp://0.0.0.0:8529 
+          --agency.my-address tcp://agency2:8529 
+          --server.authentication false 
+          --agency.size 3 
+          --agency.activate true  
+          --agency.supervision true
+          --database.directory /var/lib/arangodb3
+        deploy:
+          replicas: 1
+          placement:
+            constraints:
+            - node.hostname == ubuntu
+          restart_policy:
+            condition: on-failure
+            max_attempts: 3
+          
+    agency3: 
+        image: arangodb/arangodb
+        environment:
+            - ARANGO_NO_AUTH=1
+        command: arangod 
+          --server.endpoint tcp://0.0.0.0:8529 
+          --agency.my-address tcp://agency3:8529 
+          --server.authentication false 
+          --agency.size 3 
+          --agency.endpoint tcp://agency:8529 
+          --agency.endpoint tcp://agency2:8529 
+          --agency.endpoint tcp://agency3:8529 
+          --agency.activate true  
+          --agency.supervision true
+          --database.directory /var/lib/arangodb3
+        deploy:
+          replicas: 1
+          restart_policy:
+            condition: on-failure
+            max_attempts: 3
+          placement:
+            constraints:
+              - node.hostname == second
+          
+    db1:
+        image: arangodb/arangodb
+        environment:
+            - ARANGO_NO_AUTH=1
+        command: arangod 
+          --server.authentication=false 
+          --server.endpoint tcp://0.0.0.0:8529 
+          --cluster.my-address tcp://db1:8529 
+          --cluster.my-local-info db1 
+          --cluster.my-role SINGLE 
+          --cluster.agency-endpoint tcp://agency:8529 
+          --cluster.agency-endpoint tcp://agency2:8529 
+          --cluster.agency-endpoint tcp://agency3:8529 
+          --replication.automatic-failover true
+          --database.directory /var/lib/arangodb3
+        ports: ['10000:8529']
+        deploy:
+          replicas: 1
+          restart_policy:
+            condition: on-failure
+            max_attempts: 3
+          placement:
+             constraints:
+                - node.hostname == server.roshops.com
+
+          
+    db2:
+        image: arangodb/arangodb
+        environment:
+            - ARANGO_NO_AUTH=1
+        command: arangod 
+          --server.authentication=false 
+          --server.endpoint tcp://0.0.0.0:8529 
+          --cluster.my-address tcp://db2:8529
+          --cluster.my-local-info db2 
+          --cluster.my-role SINGLE 
+          --cluster.agency-endpoint tcp://agency:8529 
+          --cluster.agency-endpoint tcp://agency2:8529 
+          --cluster.agency-endpoint tcp://agency3:8529  
+          --replication.automatic-failover true
+          --database.directory /var/lib/arangodb3
+        ports: ['10001:8529']
+        deploy:
+          replicas: 1
+          placement:
+            constraints:
+              - node.hostname == ubuntu
+          restart_policy:
+              condition: on-failure
+              max_attempts: 3
